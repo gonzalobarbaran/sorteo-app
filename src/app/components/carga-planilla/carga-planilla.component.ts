@@ -42,7 +42,21 @@ import { AuthService } from '../../services/auth.service';
             {{ exportando() ? 'Generando Excel...' : 'Descargar Excel' }}
           </button>
 
-          <label class="btn-upload">
+          <!-- Botón para sacar foto directo (visible solo en móvil) -->
+          <label class="btn-upload solo-mobile">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              (change)="onFileSelected($event)"
+              [disabled]="cargando()"
+              hidden
+            />
+            {{ cargando() ? 'Procesando...' : 'Sacar foto' }}
+          </label>
+
+          <!-- Botón para galería en móvil / archivo en PC -->
+          <label class="btn-upload btn-galeria">
             <input
               type="file"
               accept="image/*"
@@ -50,7 +64,8 @@ import { AuthService } from '../../services/auth.service';
               [disabled]="cargando()"
               hidden
             />
-            {{ cargando() ? 'Procesando imagen...' : 'Subir o sacar foto' }}
+            <span class="texto-pc">{{ cargando() ? 'Procesando imagen...' : 'Subir foto' }}</span>
+            <span class="texto-mobile">{{ cargando() ? 'Procesando...' : 'Galería' }}</span>
           </label>
         </div>
 
@@ -357,6 +372,31 @@ import { AuthService } from '../../services/auth.service';
       .actions-footer button {
         width: 100%;
         padding: 0.75rem;
+      }
+    }
+    /* Por defecto (PC): solo se ve "Subir foto" */
+    .solo-mobile,
+    .texto-mobile {
+      display: none;
+    }
+
+    /* En móvil (< 768px): aparecen "Sacar foto" y "Galería" lado a lado */
+    @media (max-width: 768px) {
+      .solo-mobile {
+        display: inline-block;
+        flex: 1;
+      }
+      .btn-galeria {
+        flex: 1;
+        background: #f1f5f9;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+      }
+      .texto-pc {
+        display: none;
+      }
+      .texto-mobile {
+        display: inline;
       }
     }
   `]
