@@ -42,6 +42,14 @@ import { AuthService } from '../../services/auth.service';
             {{ exportando() ? 'Generando Excel...' : 'Descargar Excel' }}
           </button>
 
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="abrirModalManual('agregar')"
+          >
+            + / - Número
+          </button>
+
           <!-- Botón para sacar foto directo (visible solo en móvil) -->
           <label class="btn-upload solo-mobile">
             <input
@@ -128,7 +136,7 @@ import { AuthService } from '../../services/auth.service';
                   </tr>
                 </thead>
                 <tbody>
-                  @for (fila of filas(); track $index; let i = $index) {
+                  @for (fila of filas(); track fila._uid; let i = $index) {
                     <tr
                       [class.row-warn]="fila.confianza === 'baja'"
                       [class.row-dup]="fila.numero !== null && numerosDuplicados().has(fila.numero)"
@@ -147,7 +155,7 @@ import { AuthService } from '../../services/auth.service';
                         <input
                           type="text"
                           [(ngModel)]="fila.nombre"
-                          (ngModelChange)="fila.confianza = 'alta'; notificarCambio()"
+                          (ngModelChange)="fila.confianza = 'alta'"
                           placeholder="Nombre y apellido"
                         />
                       </td>
@@ -155,7 +163,7 @@ import { AuthService } from '../../services/auth.service';
                         <input
                           type="tel"
                           [(ngModel)]="fila.telefono"
-                          (ngModelChange)="fila.confianza = 'alta'; notificarCambio()"
+                          (ngModelChange)="fila.confianza = 'alta'"
                           placeholder="Teléfono"
                         />
                       </td>
@@ -217,6 +225,161 @@ import { AuthService } from '../../services/auth.service';
               >
                 {{ reseteando() ? 'Borrando...' : 'Borrar Todo' }}
               </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (mostrarModalManual()) {
+        <div class="modal-backdrop">
+          <div class="modal-card">
+            <div class="tabs-manual">
+              <button
+                type="button"
+                [class.tab-active]="modoManual() === 'agregar'"
+                (click)="cambiarModoManual('agregar')"
+              >
+                + Agregar
+              </button>
+              <button
+                type="button"
+                [class.tab-active]="modoManual() === 'editar'"
+                (click)="cambiarModoManual('editar')"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                [class.tab-active]="modoManual() === 'eliminar'"
+                (click)="cambiarModoManual('eliminar')"
+              >
+                - Eliminar
+              </button>
+            </div>
+
+            @if (errorModalManual()) {
+              <div class="alert-error" style="margin-bottom: 1rem;">{{ errorModalManual() }}</div>
+            }
+
+            <!-- Caso EDITAR: Paso 1 (Buscar) y Paso 2 (Formulario cargado) -->
+            @if (modoManual() === 'editar') {
+              <label class="field-label">
+                <span>{{ registroEditandoId() ? 'Número de rifa *' : 'Buscar número de rifa *' }}</span>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input
+                    type="number"
+                    inputmode="numeric"
+                    [ngModel]="manualNumero()"
+                    (ngModelChange)="manualNumero.set($event)"
+                    (keyup.enter)="!registroEditandoId() && buscarParaEditar()"
+                    placeholder="Ej: 1425"
+                    autofocus
+                  />
+                  @if (!registroEditandoId()) {
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      [disabled]="!manualNumero() || buscandoManual()"
+                      (click)="buscarParaEditar()"
+                    >
+                      {{ buscandoManual() ? '...' : 'Buscar' }}
+                    </button>
+                  }
+                </div>
+              </label>
+
+              @if (registroEditandoId()) {
+                <label class="field-label">
+                  <span>Nombre y Apellido *</span>
+                  <input
+                    type="text"
+                    [ngModel]="manualNombre()"
+                    (ngModelChange)="manualNombre.set($event)"
+                  />
+                </label>
+
+                <label class="field-label">
+                  <span>Teléfono</span>
+                  <input
+                    type="tel"
+                    [ngModel]="manualTelefono()"
+                    (ngModelChange)="manualTelefono.set($event)"
+                    (keyup.enter)="ejecutarAccionManual()"
+                  />
+                </label>
+              }
+            } @else {
+              <!-- Casos AGREGAR y ELIMINAR -->
+              <label class="field-label">
+                <span>Número de rifa *</span>
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  [ngModel]="manualNumero()"
+                  (ngModelChange)="manualNumero.set($event)"
+                  placeholder="Ej: 1425"
+                  autofocus
+                />
+              </label>
+
+              @if (modoManual() === 'agregar') {
+                <label class="field-label">
+                  <span>Nombre y Apellido *</span>
+                  <input
+                    type="text"
+                    [ngModel]="manualNombre()"
+                    (ngModelChange)="manualNombre.set($event)"
+                    placeholder="Ej: María Gómez"
+                  />
+                </label>
+
+                <label class="field-label">
+                  <span>Teléfono</span>
+                  <input
+                    type="tel"
+                    [ngModel]="manualTelefono()"
+                    (ngModelChange)="manualTelefono.set($event)"
+                    placeholder="Ej: 3875123456"
+                    (keyup.enter)="ejecutarAccionManual()"
+                  />
+                </label>
+              } @else {
+                <p>Se eliminará permanentemente de la base de datos el registro asociado a este número.</p>
+              }
+            }
+
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="btn-ghost"
+                [disabled]="procesandoManual() || buscandoManual()"
+                (click)="mostrarModalManual.set(false)"
+              >
+                Cancelar
+              </button>
+
+              @if (modoManual() !== 'editar' || registroEditandoId()) {
+                <button
+                  type="button"
+                  [class]="modoManual() === 'eliminar' ? 'btn-danger' : 'btn-primary'"
+                  [disabled]="
+                    !manualNumero() ||
+                    ((modoManual() === 'agregar' || modoManual() === 'editar') && !manualNombre().trim()) ||
+                    procesandoManual()
+                  "
+                  (click)="ejecutarAccionManual()"
+                >
+                  {{
+                    procesandoManual()
+                      ? 'Procesando...'
+                      : modoManual() === 'agregar'
+                        ? 'Guardar Número'
+                        : modoManual() === 'editar'
+                          ? 'Guardar Cambios'
+                          : 'Eliminar Número'
+                  }}
+                </button>
+              }
             </div>
           </div>
         </div>
@@ -305,6 +468,13 @@ import { AuthService } from '../../services/auth.service';
     .badge-danger { background: #fecaca; color: #991b1b; padding: 0.15rem 0.5rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
 
     .actions-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+
+    .tabs-manual { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; }
+    .tabs-manual button { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: 500; color: #475569; }
+    .tabs-manual button.tab-active { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .field-label { display: block; margin-bottom: 0.75rem; }
+    .field-label span { display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.3rem; }
+    .field-label input { margin-bottom: 0 !important; }
 
     /* Diseño adaptado a Mobile: cada fila se vuelve una tarjeta en 2 niveles */
     @media (max-width: 768px) {
@@ -409,12 +579,25 @@ export class CargaPlanillaComponent {
   mensajeExito = signal<string | null>(null);
   exportando = signal(false);
 
+  mostrarModalManual = signal(false);
+  modoManual = signal<'agregar' | 'editar' | 'eliminar'>('agregar');
+  manualNumero = signal<number | null>(null);
+  manualNombre = signal('');
+  manualTelefono = signal('');
+  procesandoManual = signal(false);
+  errorModalManual = signal<string | null>(null);
+  registroEditandoId = signal<number | null>(null);
+  buscandoManual = signal(false);
+
   cargando = signal(false);
   guardando = signal(false);
   error = signal<string | null>(null);
   previewUrl = signal<string | null>(null);
   zoom = signal(false);
-  filas = signal<FilaParticipante[]>([]);
+
+  private nextUid = 1;
+
+  filas = signal<(FilaParticipante & { _uid: number })[]>([]);
 
   mostrarModalReset = signal(false);
   claveReset = signal('');
@@ -447,7 +630,9 @@ export class CargaPlanillaComponent {
     try {
       const resultado = await this.ocrService.procesarImagenPlanilla(file);
       this.previewUrl.set(resultado.previewUrl);
-      this.filas.set(resultado.filas);
+      this.filas.set(
+        resultado.filas.map(f => ({ ...f, _uid: this.nextUid++ }))
+      );
     } catch (err) {
       this.error.set('No se pudo procesar la planilla. Verificá tu conexión o intentá con una foto más nítida.');
       console.error(err);
@@ -460,7 +645,7 @@ export class CargaPlanillaComponent {
   agregarFila() {
     this.filas.update(actual => [
       ...actual,
-      { numero: null, nombre: '', telefono: '', pagado: true, confianza: 'alta' }
+      { _uid: this.nextUid++, numero: null, nombre: '', telefono: '', pagado: true, confianza: 'alta' }
     ]);
   }
 
@@ -480,6 +665,11 @@ export class CargaPlanillaComponent {
   }
 
   async guardarEnBaseDeDatos() {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    await new Promise(resolve => setTimeout(resolve, 0));
+
     this.guardando.set(true);
     this.error.set(null);
     this.mensajeExito.set(null);
@@ -533,5 +723,69 @@ export class CargaPlanillaComponent {
   async cerrarSesion() {
     await this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  cambiarModoManual(modo: 'agregar' | 'editar' | 'eliminar') {
+    this.modoManual.set(modo);
+    this.manualNumero.set(null);
+    this.manualNombre.set('');
+    this.manualTelefono.set('');
+    this.registroEditandoId.set(null);
+    this.errorModalManual.set(null);
+  }
+
+  abrirModalManual(modo: 'agregar' | 'editar' | 'eliminar') {
+    this.cambiarModoManual(modo);
+    this.mostrarModalManual.set(true);
+  }
+
+  async buscarParaEditar() {
+    const num = this.manualNumero();
+    if (!num) return;
+
+    this.buscandoManual.set(true);
+    this.errorModalManual.set(null);
+    this.registroEditandoId.set(null);
+
+    try {
+      const encontrado = await this.participantesService.buscarPorNumero(num);
+      this.registroEditandoId.set(encontrado.id!);
+      this.manualNumero.set(encontrado.numero);
+      this.manualNombre.set(encontrado.nombre);
+      this.manualTelefono.set(encontrado.telefono || '');
+    } catch (err: any) {
+      this.errorModalManual.set(err.message || 'No se encontró el número.');
+    } finally {
+      this.buscandoManual.set(false);
+    }
+  }
+
+  async ejecutarAccionManual() {
+    const num = this.manualNumero();
+    if (!num) return;
+
+    this.procesandoManual.set(true);
+    this.errorModalManual.set(null);
+    this.mensajeExito.set(null);
+
+    try {
+      if (this.modoManual() === 'agregar') {
+        await this.participantesService.agregarManual(num, this.manualNombre(), this.manualTelefono());
+        this.mensajeExito.set(`Número ${num} agregado correctamente.`);
+      } else if (this.modoManual() === 'editar') {
+        const id = this.registroEditandoId();
+        if (!id) return;
+        await this.participantesService.actualizarParticipante(id, num, this.manualNombre(), this.manualTelefono());
+        this.mensajeExito.set(`Número ${num} actualizado correctamente.`);
+      } else {
+        await this.participantesService.eliminarPorNumero(num);
+        this.mensajeExito.set(`Número ${num} eliminado de la base de datos.`);
+      }
+      this.mostrarModalManual.set(false);
+    } catch (err: any) {
+      this.errorModalManual.set(err.message || 'Ocurrió un error.');
+    } finally {
+      this.procesandoManual.set(false);
+    }
   }
 }

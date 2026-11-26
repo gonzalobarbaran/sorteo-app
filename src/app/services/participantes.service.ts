@@ -97,4 +97,96 @@ export class ParticipantesService {
       throw new Error(error.message);
     }
   }
+
+  async agregarManual(numero: number, nombre: string, telefono: string): Promise<void> {
+    if (!numero || !nombre.trim()) {
+      throw new Error('El número y el nombre son obligatorios.');
+    }
+
+    const { error } = await this.auth.supabase
+      .from('participantes')
+      .insert({
+        numero: Number(numero),
+        nombre: nombre.trim(),
+        telefono: telefono.trim(),
+        pagado: true
+      });
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`El número ${numero} ya está cargado en la base de datos.`);
+      }
+      throw new Error(error.message);
+    }
+  }
+
+  async eliminarPorNumero(numero: number): Promise<void> {
+    if (!numero) {
+      throw new Error('Ingresá un número de rifa válido.');
+    }
+
+    // Usamos .select() después de .delete() para saber si realmente existía y se borró una fila
+    const { data, error } = await this.auth.supabase
+      .from('participantes')
+      .delete()
+      .eq('numero', Number(numero))
+      .select();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error(`No se encontró ningún registro con el número ${numero}.`);
+    }
+  }
+
+  async buscarPorNumero(numero: number): Promise<ParticipanteDB> {
+    if (!numero) {
+      throw new Error('Ingresá un número de rifa válido.');
+    }
+
+    const { data, error } = await this.auth.supabase
+      .from('participantes')
+      .select('*')
+      .eq('numero', Number(numero))
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error(`No existe ningún registro con el número ${numero}.`);
+    }
+
+    return data;
+  }
+
+  async actualizarParticipante(
+    id: number,
+    nuevoNumero: number,
+    nombre: string,
+    telefono: string
+  ): Promise<void> {
+    if (!nuevoNumero || !nombre.trim()) {
+      throw new Error('El número y el nombre son obligatorios.');
+    }
+
+    const { error } = await this.auth.supabase
+      .from('participantes')
+      .update({
+        numero: Number(nuevoNumero),
+        nombre: nombre.trim(),
+        telefono: telefono.trim()
+      })
+      .eq('id', id);
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`El número ${nuevoNumero} ya está ocupado por otra persona.`);
+      }
+      throw new Error(error.message);
+    }
+  }
 }
