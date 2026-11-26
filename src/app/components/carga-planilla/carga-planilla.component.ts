@@ -14,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
     <div class="container">
       <header class="header">
         <div>
-          <h1>Carga de Planillas</h1>
+          <h1>Carga de Planillas ⚜ 811 ⚜</h1>
           <p>Subí una foto de la planilla impresa para extraer y verificar los números.</p>
         </div>
 
