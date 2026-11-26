@@ -18,7 +18,7 @@ import { AuthService } from '../../services/auth.service';
           <p>Subí una foto de la planilla impresa para extraer y verificar los números.</p>
         </div>
 
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <div class="header-actions">
           <button
             type="button"
             class="btn-ghost"
@@ -56,7 +56,7 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         @if (mensajeExito()) {
-          <div class="alert-success" style="background: #f0fdf4; color: #166534; padding: 0.85rem; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 1rem;">
+          <div class="alert-success">
             {{ mensajeExito() }}
           </div>
         }
@@ -107,10 +107,10 @@ import { AuthService } from '../../services/auth.service';
               <table>
                 <thead>
                   <tr>
-                    <th style="width: 80px;">N°</th>
-                    <th>Nombre y Apellido</th>
-                    <th style="width: 140px;">Teléfono</th>
-                    <th style="width: 45px;"></th>
+                    <th class="col-num">N°</th>
+                    <th class="col-nom">Nombre y Apellido</th>
+                    <th class="col-tel">Teléfono</th>
+                    <th class="col-del"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -119,31 +119,33 @@ import { AuthService } from '../../services/auth.service';
                       [class.row-warn]="fila.confianza === 'baja'"
                       [class.row-dup]="fila.numero !== null && numerosDuplicados().has(fila.numero)"
                     >
-                      <td>
+                      <td class="cell-num">
+                        <span class="mobile-label">N°</span>
                         <input
                           type="number"
+                          inputmode="numeric"
                           [(ngModel)]="fila.numero"
-                          (ngModelChange)="notificarCambio()"
+                          (ngModelChange)="fila.confianza = 'alta'; notificarCambio()"
                           placeholder="N°"
                         />
                       </td>
-                      <td>
+                      <td class="cell-nom">
                         <input
                           type="text"
                           [(ngModel)]="fila.nombre"
                           (ngModelChange)="fila.confianza = 'alta'; notificarCambio()"
-                          placeholder="Nombre completo"
+                          placeholder="Nombre y apellido"
                         />
                       </td>
-                      <td>
+                      <td class="cell-tel">
                         <input
-                          type="text"
+                          type="tel"
                           [(ngModel)]="fila.telefono"
                           (ngModelChange)="fila.confianza = 'alta'; notificarCambio()"
-                          placeholder="Opcional"
+                          placeholder="Teléfono"
                         />
                       </td>
-                      <td>
+                      <td class="cell-del">
                         <button type="button" class="btn-del" (click)="eliminarFila(i)" title="Eliminar fila">
                           ✕
                         </button>
@@ -212,14 +214,16 @@ import { AuthService } from '../../services/auth.service';
     .header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .header h1 { margin: 0; font-size: 1.5rem; }
     .header p { margin: 0.25rem 0 0; color: #64748b; font-size: 0.95rem; }
+    .header-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
 
-    .btn-upload, .btn-primary { background: #0f172a; color: #fff; padding: 0.65rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 500; border: none; }
+    .btn-upload, .btn-primary { background: #0f172a; color: #fff; padding: 0.65rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 500; border: none; text-align: center; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; }
-    .btn-ghost { background: transparent; border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; color: #475569; }
-    .btn-del { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; }
+    .btn-secondary { background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-ghost { background: transparent; border: 1px solid #e2e8f0; padding: 0.45rem 0.85rem; border-radius: 6px; cursor: pointer; color: #475569; }
+    .btn-del { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.1rem; padding: 0.25rem 0.4rem; }
     .btn-del:hover { color: #ef4444; }
 
+    .alert-success { width: 100%; background: #f0fdf4; color: #166534; padding: 0.85rem; border-radius: 8px; border: 1px solid #bbf7d0; }
     .alert-error { background: #fef2f2; color: #b91c1c; padding: 0.85rem; border-radius: 8px; border: 1px solid #fecaca; margin-bottom: 1rem; }
     .loader-box { text-align: center; padding: 4rem 1rem; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; }
     .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #0f172a; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
@@ -229,8 +233,8 @@ import { AuthService } from '../../services/auth.service';
     @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } }
 
     .panel-imagen, .panel-tabla { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
-    .stats { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; gap: 0.5rem; }
+    .stats { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 
     .img-wrapper { max-height: 650px; overflow: auto; background: #0f172a; display: flex; justify-content: center; }
     .img-wrapper img { max-width: 100%; height: auto; object-fit: contain; transition: transform 0.2s; }
@@ -238,39 +242,40 @@ import { AuthService } from '../../services/auth.service';
 
     .table-scroll { max-height: 550px; overflow-y: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th { position: sticky; top: 0; background: #f8fafc; text-align: left; padding: 0.6rem; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 600; }
+    th { position: sticky; top: 0; z-index: 2; background: #f8fafc; text-align: left; padding: 0.6rem; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 600; }
+    .col-num { width: 95px; }
+    .col-tel { width: 150px; }
+    .col-del { width: 42px; }
+    .mobile-label { display: none; }
+
     td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #f1f5f9; }
-    td input[type="text"], td input[type="number"] { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
+    td input[type="text"], td input[type="number"], td input[type="tel"] {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      background: #fff;
+    }
     td input:focus { outline: none; border-color: #0f172a; }
 
-    .row-warn {
-      background: #fed7aa !important; /* Naranja claro saturado */
-    }
-    .row-warn td:first-child {
-      border-left: 5px solid #ea580c; /* Franja naranja fuerte a la izquierda */
-    }
-    .row-warn input {
-      background: #fff7ed;
-      border: 2px solid #f97316 !important;
-      font-weight: 600;
-      color: #9a3412;
-    }
+    /* Quitar flechitas de input number para ganar espacio en celular */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
 
-    /* Fila duplicada: rojo intenso */
-    .row-dup {
-      background: #fecaca !important;
-    }
-    .row-dup td:first-child {
-      border-left: 5px solid #dc2626;
-    }
-    .row-dup input {
-      background: #fef2f2;
-      border: 2px solid #ef4444 !important;
-      font-weight: 600;
-      color: #991b1b;
-    }
+    /* Fila con baja confianza */
+    .row-warn { background: #fed7aa !important; }
+    .row-warn td:first-child { border-left: 5px solid #ea580c; }
+    .row-warn input { background: #fff7ed; border: 2px solid #f97316 !important; font-weight: 600; color: #9a3412; }
 
-    .btn-danger-outline { background: #fff; color: #dc2626; border: 1px solid #fecaca; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    /* Fila duplicada */
+    .row-dup { background: #fecaca !important; }
+    .row-dup td:first-child { border-left: 5px solid #dc2626; }
+    .row-dup input { background: #fef2f2; border: 2px solid #ef4444 !important; font-weight: 600; color: #991b1b; }
+
+    .btn-danger-outline { background: #fff; color: #dc2626; border: 1px solid #fecaca; padding: 0.45rem 0.85rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
     .btn-danger-outline:hover { background: #fef2f2; }
     .btn-danger { background: #dc2626; color: #fff; border: none; padding: 0.55rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
     .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -286,6 +291,75 @@ import { AuthService } from '../../services/auth.service';
     .badge-danger { background: #fecaca; color: #991b1b; padding: 0.15rem 0.5rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
 
     .actions-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+
+    /* Diseño adaptado a Mobile: cada fila se vuelve una tarjeta en 2 niveles */
+    @media (max-width: 768px) {
+      .container { padding: 0.75rem; }
+      .header h1 { font-size: 1.25rem; }
+      .header-actions { width: 100%; }
+      .btn-upload { width: 100%; }
+
+      .img-wrapper { max-height: 360px; }
+      .table-scroll { max-height: none; overflow: visible; }
+
+      table, tbody { display: block; width: 100%; }
+      thead { display: none; }
+
+      tbody tr {
+        display: grid;
+        grid-template-columns: 92px 1fr 38px;
+        grid-template-areas:
+          "num tel del"
+          "nom nom nom";
+        gap: 0.45rem;
+        padding: 0.65rem;
+        border-bottom: 2px solid #e2e8f0;
+        align-items: center;
+      }
+
+      tbody td {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+      }
+
+      .cell-num {
+        grid-area: num;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .mobile-label {
+        display: inline;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+      }
+      .cell-num input {
+        text-align: center;
+        font-weight: 700;
+        padding: 0.45rem 0.25rem;
+      }
+
+      .cell-tel { grid-area: tel; }
+      .cell-del { grid-area: del; text-align: right; }
+      .cell-nom { grid-area: nom; }
+      .cell-nom input { font-weight: 500; }
+
+      /* El borde lateral de alerta va en el tr entero en lugar de la primera celda */
+      .row-warn td:first-child,
+      .row-dup td:first-child { border-left: none; }
+      .row-warn { border-left: 5px solid #ea580c; }
+      .row-dup { border-left: 5px solid #dc2626; }
+
+      .actions-footer {
+        flex-direction: column-reverse;
+      }
+      .actions-footer button {
+        width: 100%;
+        padding: 0.75rem;
+      }
+    }
   `]
 })
 export class CargaPlanillaComponent {
