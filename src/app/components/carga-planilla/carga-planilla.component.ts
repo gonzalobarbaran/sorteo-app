@@ -46,7 +46,6 @@ import { AuthService } from '../../services/auth.service';
             <input
               type="file"
               accept="image/*"
-              capture="environment"
               (change)="onFileSelected($event)"
               [disabled]="cargando()"
               hidden
