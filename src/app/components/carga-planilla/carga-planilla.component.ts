@@ -253,7 +253,14 @@ import { AuthService } from '../../services/auth.service';
                 [class.tab-active]="modoManual() === 'eliminar'"
                 (click)="cambiarModoManual('eliminar')"
               >
-                - Eliminar
+                - Uno
+              </button>
+              <button
+                type="button"
+                [class.tab-active]="modoManual() === 'rango'"
+                (click)="cambiarModoManual('rango')"
+              >
+                - Rango
               </button>
             </div>
 
@@ -261,7 +268,7 @@ import { AuthService } from '../../services/auth.service';
               <div class="alert-error" style="margin-bottom: 1rem;">{{ errorModalManual() }}</div>
             }
 
-            <!-- Caso EDITAR: Paso 1 (Buscar) y Paso 2 (Formulario cargado) -->
+            <!-- Caso EDITAR -->
             @if (modoManual() === 'editar') {
               <label class="field-label">
                 <span>{{ registroEditandoId() ? 'Número de rifa *' : 'Buscar número de rifa *' }}</span>
@@ -308,8 +315,45 @@ import { AuthService } from '../../services/auth.service';
                   />
                 </label>
               }
+            } @else if (modoManual() === 'rango') {
+              <!-- Caso BORRAR RANGO -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <label class="field-label" style="margin-bottom: 0;">
+                  <span>Desde el N° *</span>
+                  <input
+                    type="number"
+                    inputmode="numeric"
+                    [ngModel]="manualNumero()"
+                    (ngModelChange)="manualNumero.set($event)"
+                    placeholder="Ej: 1200"
+                    autofocus
+                  />
+                </label>
+
+                <label class="field-label" style="margin-bottom: 0;">
+                  <span>Hasta el N° *</span>
+                  <input
+                    type="number"
+                    inputmode="numeric"
+                    [ngModel]="manualNumeroHasta()"
+                    (ngModelChange)="manualNumeroHasta.set($event)"
+                    (keyup.enter)="cantidadEnRango() <= 15 && ejecutarAccionManual()"
+                    placeholder="Ej: 1214"
+                  />
+                </label>
+              </div>
+
+              @if (cantidadEnRango() > 15) {
+                <div class="alert-error" style="margin-bottom: 0.75rem; font-size: 0.85rem;">
+                  El rango abarca <strong>{{ cantidadEnRango() }} números</strong>. Podés borrar como máximo <strong>15</strong> a la vez.
+                </div>
+              } @else {
+                <p>
+                  Se eliminarán permanentemente los números de ese rango (ambos extremos incluidos, máximo 15 por vez).
+                </p>
+              }
             } @else {
-              <!-- Casos AGREGAR y ELIMINAR -->
+              <!-- Casos AGREGAR y ELIMINAR UNO -->
               <label class="field-label">
                 <span>Número de rifa *</span>
                 <input
@@ -361,10 +405,11 @@ import { AuthService } from '../../services/auth.service';
               @if (modoManual() !== 'editar' || registroEditandoId()) {
                 <button
                   type="button"
-                  [class]="modoManual() === 'eliminar' ? 'btn-danger' : 'btn-primary'"
+                  [class]="(modoManual() === 'eliminar' || modoManual() === 'rango') ? 'btn-danger' : 'btn-primary'"
                   [disabled]="
                     !manualNumero() ||
                     ((modoManual() === 'agregar' || modoManual() === 'editar') && !manualNombre().trim()) ||
+                    (modoManual() === 'rango' && !manualNumeroHasta()) ||
                     procesandoManual()
                   "
                   (click)="ejecutarAccionManual()"
@@ -376,7 +421,9 @@ import { AuthService } from '../../services/auth.service';
                         ? 'Guardar Número'
                         : modoManual() === 'editar'
                           ? 'Guardar Cambios'
-                          : 'Eliminar Número'
+                          : modoManual() === 'rango'
+                            ? 'Eliminar Rango'
+                            : 'Eliminar Número'
                   }}
                 </button>
               }
@@ -580,14 +627,22 @@ export class CargaPlanillaComponent {
   exportando = signal(false);
 
   mostrarModalManual = signal(false);
-  modoManual = signal<'agregar' | 'editar' | 'eliminar'>('agregar');
+  modoManual = signal<'agregar' | 'editar' | 'eliminar' | 'rango'>('agregar');
   manualNumero = signal<number | null>(null);
+  manualNumeroHasta = signal<number | null>(null);
   manualNombre = signal('');
   manualTelefono = signal('');
   procesandoManual = signal(false);
   errorModalManual = signal<string | null>(null);
   registroEditandoId = signal<number | null>(null);
   buscandoManual = signal(false);
+
+  cantidadEnRango = computed(() => {
+    const desde = this.manualNumero();
+    const hasta = this.manualNumeroHasta();
+    if (!desde || !hasta) return 0;
+    return Math.abs(Number(hasta) - Number(desde)) + 1;
+  });
 
   cargando = signal(false);
   guardando = signal(false);
@@ -725,16 +780,17 @@ export class CargaPlanillaComponent {
     this.router.navigate(['/login']);
   }
 
-  cambiarModoManual(modo: 'agregar' | 'editar' | 'eliminar') {
+  cambiarModoManual(modo: 'agregar' | 'editar' | 'eliminar' | 'rango') {
     this.modoManual.set(modo);
     this.manualNumero.set(null);
+    this.manualNumeroHasta.set(null);
     this.manualNombre.set('');
     this.manualTelefono.set('');
     this.registroEditandoId.set(null);
     this.errorModalManual.set(null);
   }
 
-  abrirModalManual(modo: 'agregar' | 'editar' | 'eliminar') {
+  abrirModalManual(modo: 'agregar' | 'editar' | 'eliminar' | 'rango') {
     this.cambiarModoManual(modo);
     this.mostrarModalManual.set(true);
   }
@@ -777,6 +833,13 @@ export class CargaPlanillaComponent {
         if (!id) return;
         await this.participantesService.actualizarParticipante(id, num, this.manualNombre(), this.manualTelefono());
         this.mensajeExito.set(`Número ${num} actualizado correctamente.`);
+      } else if (this.modoManual() === 'rango') {
+        const hasta = this.manualNumeroHasta();
+        if (!hasta) return;
+        const eliminados = await this.participantesService.eliminarPorRango(num, hasta);
+        const min = Math.min(num, hasta);
+        const max = Math.max(num, hasta);
+        this.mensajeExito.set(`Se eliminaron ${eliminados} registros del rango ${min} al ${max}.`);
       } else {
         await this.participantesService.eliminarPorNumero(num);
         this.mensajeExito.set(`Número ${num} eliminado de la base de datos.`);

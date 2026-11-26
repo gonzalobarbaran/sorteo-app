@@ -189,4 +189,35 @@ export class ParticipantesService {
       throw new Error(error.message);
     }
   }
+
+  async eliminarPorRango(desde: number, hasta: number): Promise<number> {
+    if (!desde || !hasta) {
+      throw new Error('Ingresá ambos extremos del rango.');
+    }
+
+    const min = Math.min(Number(desde), Number(hasta));
+    const max = Math.max(Number(desde), Number(hasta));
+    const cantidadRango = max - min + 1;
+
+    if (cantidadRango > 15) {
+      throw new Error(`El rango seleccionado abarca ${cantidadRango} números. El máximo permitido por operación es 15.`);
+    }
+
+    const { data, error } = await this.auth.supabase
+      .from('participantes')
+      .delete()
+      .gte('numero', min)
+      .lte('numero', max)
+      .select('id');
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error(`No se encontraron registros entre los números ${min} y ${max}.`);
+    }
+
+    return data.length;
+  }
 }
