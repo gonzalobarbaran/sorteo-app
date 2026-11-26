@@ -220,4 +220,29 @@ export class ParticipantesService {
 
     return data.length;
   }
+
+  async obtenerPadronCompleto(): Promise<ParticipanteDB[]> {
+    const todos: ParticipanteDB[] = [];
+    const pageSize = 1000;
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await this.auth.supabase
+        .from('participantes')
+        .select('id, numero, nombre, telefono')
+        .order('numero', { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data || data.length === 0) break;
+      todos.push(...data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    return todos;
+  }
 }

@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FilaParticipante, OcrPlanillaService } from '../../services/ocr-planilla.service';
 import { ParticipantesService } from '../../services/participantes.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-carga-planilla',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container">
       <header class="header">
@@ -82,6 +82,10 @@ import { AuthService } from '../../services/auth.service';
             {{ mensajeExito() }}
           </div>
         }
+
+        <a routerLink="/sorteo" class="btn-primary" style="text-decoration: none;">
+          Ir al Sorteo
+        </a>
       </header>
 
       @if (error()) {
